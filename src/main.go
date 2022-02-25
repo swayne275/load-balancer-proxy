@@ -38,6 +38,16 @@ func NewLoadBalancer(port string, servers []Server) *LoadBalancer {
 	}
 }
 
+// handleErr prints the error and exits the program
+// Note: this is not how one would want to handle errors in production, but
+// serves well for demonstration purposes.
+func handleErr(err error) {
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 // getNextServerAddr returns the address of the next available server to send a
 // request to, using a simple round-robin algorithm
 func (lb *LoadBalancer) getNextAvailableServer() Server {
@@ -49,16 +59,6 @@ func (lb *LoadBalancer) getNextAvailableServer() Server {
 	lb.roundRobinCount++
 
 	return server
-}
-
-// handleErr prints the error and exits the program
-// Note: this is not how one would want to handle errors in production, but
-// serves well for demonstration purposes.
-func handleErr(err error) {
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		os.Exit(1)
-	}
 }
 
 func (lb *LoadBalancer) serveProxy(rw http.ResponseWriter, req *http.Request) {
