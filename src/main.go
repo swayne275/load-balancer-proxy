@@ -95,5 +95,6 @@ func main() {
 	// register a proxy handler to handle all requests
 	http.HandleFunc("/", handleRedirect)
 
+	fmt.Printf("serving requests at 'localhost:%s'\n", lb.port)
 	http.ListenAndServe(":"+lb.port, nil)
 }
