@@ -12,7 +12,7 @@ type Server interface {
 	// Address returns the address with which to access the server
 	Address() string
 
-	// CheckAlive returns true if the server is alive and able to serve requests
+	// IsAlive returns true if the server is alive and able to serve requests
 	IsAlive() bool
 }
 
