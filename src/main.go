@@ -14,15 +14,33 @@ type Server interface {
 
 	// IsAlive returns true if the server is alive and able to serve requests
 	IsAlive() bool
+
+	// Serve uses this server to process the request
+	Serve(rw http.ResponseWriter, req *http.Request)
 }
 
 type simpleServer struct {
-	addr string
+	addr  string
+	proxy *httputil.ReverseProxy
 }
 
 func (s *simpleServer) Address() string { return s.addr }
 
 func (s *simpleServer) IsAlive() bool { return true }
+
+func (s *simpleServer) Serve(rw http.ResponseWriter, req *http.Request) {
+	s.proxy.ServeHTTP(rw, req)
+}
+
+func newSimpleServer(addr string) *simpleServer {
+	serverUrl, err := url.Parse(addr)
+	handleErr(err)
+
+	return &simpleServer{
+		addr:  addr,
+		proxy: httputil.NewSingleHostReverseProxy(serverUrl),
+	}
+}
 
 type LoadBalancer struct {
 	port            string
@@ -64,29 +82,20 @@ func (lb *LoadBalancer) getNextAvailableServer() Server {
 func (lb *LoadBalancer) serveProxy(rw http.ResponseWriter, req *http.Request) {
 	targetServer := lb.getNextAvailableServer()
 
-	targetUrl, err := url.Parse(targetServer.Address())
-	handleErr(err)
-
 	// could optionally log stuff about the request here!
 	fmt.Printf("forwarding request to address %q\n", targetServer.Address())
 
 	// could delete pre-existing X-Forwarded-For header to prevent IP spoofing
-	proxy := httputil.NewSingleHostReverseProxy(targetUrl)
-	proxy.ServeHTTP(rw, req)
+	targetServer.Serve(rw, req)
 }
 
 func main() {
 	servers := []Server{
-		&simpleServer{
-			addr: "https://www.google.com",
-		},
-		&simpleServer{
-			addr: "https://www.bing.com",
-		},
-		&simpleServer{
-			addr: "https://www.duckduckgo.com",
-		},
+		newSimpleServer("https://www.google.com"),
+		newSimpleServer("https://www.bing.com"),
+		newSimpleServer("https://www.duckduckgo.com"),
 	}
+
 	lb := NewLoadBalancer("8000", servers)
 	handleRedirect := func(rw http.ResponseWriter, req *http.Request) {
 		lb.serveProxy(rw, req)
