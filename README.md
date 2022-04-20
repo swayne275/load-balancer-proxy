@@ -2,4 +2,7 @@
 A simple Load Balancer in Go!
 
 ## How to run
-`go run main.go`
+`go run src/main.go`
+
+## How to stop
+`ctrl-c` in the terminal running the program
